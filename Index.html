@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Passport Scanner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f4f4;
+    }
+
+    .screen {
+      display: none;
+      padding: 20px;
+    }
+    .active {
+      display: block;
+    }
+
+    .intro {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: black;
+      color: white;
+      text-align: center;
+    }
+
+    .flags {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 15px 0;
+    }
+    .flag {
+      width: 100px;
+      height: 80px;
+      background-size: cover;
+      background-position: center;
+      border: 1px solid #ccc;
+    }
+    .ethiopia {
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/7/71/Flag_of_Ethiopia.svg');
+    }
+    .canada {
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg');
+    }
+
+    header {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px;
+      margin: 15px auto;
+      display: block;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .fingerprints {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin: 15px 0;
+    }
+
+    .fingerprint-container {
+      text-align: center;
+    }
+
+    .fingerprint {
+      width: 70px;
+      height: 90px;
+      background-color: #f1c27d;
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/2/28/Fingerprint_Whorl.svg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 50% / 60%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .fingerprint.scanning {
+      box-shadow: 0 0 15px 5px rgba(0, 153, 255, 0.6);
+      background-color: #a2d2ff;
+    }
+
+    .fingerprint.scanned {
+      background-color: #006400;
+      background-image: none;
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .status {
+      font-size: 12px;
+      margin-top: 4px;
+      height: 16px;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 350px;
+      height: 150px;
+      border: 2px solid #000;
+      border-radius: 6px;
+      display: block;
+      margin: 20px auto;
+      touch-action: none;
+    }
+
+    .buttons {
+      text-align: center;
+    }
+
+    .buttons button {
+      margin: 5px;
+      padding: 10px 15px;
+      font-size: 14px;
+    }
+
+    /* Submit button states */
+    #submitBtn.submitting {
+      background-color: #ccc;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    #submitBtn.success {
+      background-color: #28a745;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Intro Screen -->
+<div class="screen intro active" id="introScreen">
+  <h1>MESRAK GENERAL TRADING PLC 0904070652</h1>
+  <p>Welcome to the biometric passport registration system.</p>
+  <div class="flags">
+    <div class="flag ethiopia"></div>
+    <div class="flag canada"></div>
+  </div>
+  <button onclick="showMain()">Start</button>
+</div>
+
+<!-- Main Screen -->
+<div class="screen" id="mainScreen">
+  <header>MESRAK GENERAL TRADING PLC 0904070652</header>
+
+  <div class="flags">
+    <div class="flag ethiopia"></div>
+    <div class="flag canada"></div>
+  </div>
+
+  <input type="text" id="fullName" placeholder="Enter your full name"/>
+
+  <h3>Fingerprint Scanning</h3>
+  <div class="fingerprints">
+    <div class="fingerprint-container">
+      <div class="fingerprint" data-id="1"></div>
+      <div>Thumb</div>
+      <div class="status" id="status-1"></div>
+    </div>
+    <div class="fingerprint-container">
+      <div class="fingerprint" data-id="2"></div>
+      <div>Index</div>
+      <div class="status" id="status-2"></div>
+    </div>
+    <div class="fingerprint-container">
+      <div class="fingerprint" data-id="3"></div>
+      <div>Middle</div>
+      <div class="status" id="status-3"></div>
+    </div>
+    <div class="fingerprint-container">
+      <div class="fingerprint" data-id="4"></div>
+      <div>Ring</div>
+      <div class="status" id="status-4"></div>
+    </div>
+    <div class="fingerprint-container">
+      <div class="fingerprint" data-id="5"></div>
+      <div>Little</div>
+      <div class="status" id="status-5"></div>
+    </div>
+  </div>
+
+  <h3>Digital Signature</h3>
+  <canvas id="signature"></canvas>
+  <div class="buttons">
+    <button onclick="clearCanvas()">Clear</button>
+    <button onclick="saveCanvas()">Save</button>
+    <button id="submitBtn" onclick="submitForm()">Submit</button>
+  </div>
+</div>
+
+<script>
+  function showMain() {
+    document.getElementById('introScreen').classList.remove('active');
+    document.getElementById('mainScreen').classList.add('active');
+  }
+
+  function playBeep(freq, duration) {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.frequency.value = freq;
+    oscillator.start();
+    gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration / 1000);
+    oscillator.stop(ctx.currentTime + duration / 1000);
+  }
+
+  const usedFingers = new Set();
+  document.querySelectorAll('.fingerprint').forEach(fp => {
+    fp.addEventListener('click', () => {
+      const id = fp.dataset.id;
+      if (usedFingers.has(id)) return;
+
+      fp.classList.add('scanning');
+      playBeep(600, 150);
+
+      setTimeout(() => {
+        fp.classList.remove('scanning');
+        fp.classList.add('scanned');
+        document.getElementById(`status-${id}`).innerText = 'Scan completed';
+        usedFingers.add(id);
+        playBeep(1000, 150);
+      }, 1300);
+    });
+  });
+
+  // Signature
+  const canvas = document.getElementById("signature");
+  const ctx = canvas.getContext("2d");
+  let drawing = false;
+  let lastX, lastY;
+
+  canvas.addEventListener("mousedown", e => {
+    drawing = true;
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+  });
+  canvas.addEventListener("mouseup", () => drawing = false);
+  canvas.addEventListener("mousemove", draw);
+  canvas.addEventListener("touchstart", e => {
+    drawing = true;
+    const rect = canvas.getBoundingClientRect();
+    lastX = e.touches[0].clientX - rect.left;
+    lastY = e.touches[0].clientY - rect.top;
+  }, { passive: false });
+  canvas.addEventListener("touchend", () => drawing = false);
+  canvas.addEventListener("touchmove", e => {
+    e.preventDefault();
+    if (!drawing) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    [lastX, lastY] = [x, y];
+  }, { passive: false });
+
+  function draw(e) {
+    if (!drawing) return;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+  }
+
+  function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function saveCanvas() {
+    alert("Signature saved!");
+  }
+
+  function isCanvasBlank(canvas) {
+    const blank = document.createElement('canvas');
+    blank.width = canvas.width;
+    blank.height = canvas.height;
+    return canvas.toDataURL() === blank.toDataURL();
+  }
+
+  function submitForm() {
+    const name = document.getElementById("fullName").value.trim();
+    const submitBtn = document.getElementById("submitBtn");
+
+    if (!name) {
+      alert("Please enter your full name.");
+      return;
+    }
+
+    // Check if signature is present
+    if (isCanvasBlank(canvas)) {
+      alert("Please provide your signature.");
+      return;
+    }
+
+    // Before submission
+    submitBtn.classList.add('submitting');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+
+    setTimeout(() => {
+      // After submission
+      submitBtn.classList.remove('submitting');
+      submitBtn.classList.add('success');
+      submitBtn.textContent = "Submitted";
+
+      alert(`Form submitted!\nName: ${name}`);
+    }, 1500);
+  }
+</script>
+</body>
+</html>
