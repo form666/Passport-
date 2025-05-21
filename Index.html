@@ -1,285 +1,321 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Fingerprint & Signature Capture</title>
-
-<!-- Scan sound -->
-<audio id="scan-sound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_5f5a651cd4.mp3?filename=beep-6-96243.mp3" preload="auto"></audio>
-
 <style>
+  /* Reset & base */
+  * {
+    box-sizing: border-box;
+  }
   body {
+    margin: 0; 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(to right, #e0f7fa, #fce4ec);
+    background: #f0f4f8;
+    color: #222;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     padding: 20px;
-    color: #333;
   }
-
-  .company-info {
+  h1, h2 {
     text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-    color: #4a148c;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    color: #034078;
   }
-
-  #intro, #capture { display: none; }
-  #intro.active, #capture.active { display: block; }
-
+  .company-info {
+    font-weight: 700;
+    font-size: 28px;
+    text-align: center;
+    color: #022f40;
+    margin-bottom: 24px;
+  }
   #flags {
     text-align: center;
     margin-bottom: 20px;
   }
   #flags img {
     width: 100px;
-    height: auto;
-    margin: 0 10px;
+    margin: 0 12px;
     vertical-align: middle;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+  }
+  #intro, #capture {
+    max-width: 700px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px 40px 40px 40px;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+  #intro.active, #capture.active {
+    display: block;
+  }
+  #intro, #capture {
+    display: none;
   }
 
   button {
-    padding: 12px 30px;
-    font-size: 18px;
-    background: #4a90e2;
+    background: #0366d6;
     border: none;
     color: white;
-    border-radius: 6px;
+    font-weight: 600;
+    padding: 14px 36px;
+    font-size: 18px;
+    border-radius: 10px;
     cursor: pointer;
-    box-shadow: 0 4px 8px rgba(74,144,226,0.4);
-    transition: background 0.3s ease;
+    transition: background 0.25s ease;
+    box-shadow: 0 6px 12px rgba(3,102,214,0.3);
   }
   button:hover:not(:disabled) {
-    background: #357ABD;
+    background: #024ea2;
+    box-shadow: 0 8px 16px rgba(3,102,214,0.5);
   }
   button:disabled {
     background: #a0a9b8;
-    cursor: default;
-  }
-
-  h1, h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #2c3e50;
-  }
-
-  .finger-container {
-    max-width: 600px;
-    margin: 0 auto 30px auto;
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    flex-wrap: wrap;
-  }
-
-  .finger-scan {
-    flex: 1 1 100px;
-    max-width: 110px;
-    background: linear-gradient(145deg, #e0e7ff, #c7d2fe);
-    border-radius: 50% / 70% 70% 30% 30%;
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.12),
-                inset 0 3px 8px rgba(255, 255, 255, 0.8);
-    padding: 20px 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.4s ease;
-    position: relative;
-    user-select: none;
-    margin-bottom: 15px;
-  }
-  .finger-scan:hover:not(.completed):not(.scanning) {
-    box-shadow: 0 14px 25px rgba(0, 0, 0, 0.18),
-                inset 0 5px 10px rgba(255, 255, 255, 0.9);
-    transform: scale(1.05);
-  }
-  .finger-scan.scanning {
-    background: linear-gradient(145deg, #fff59d, #fff176);
-    box-shadow: 0 12px 22px rgba(255, 235, 59, 0.5),
-                inset 0 6px 12px rgba(255, 255, 224, 0.9);
-    transform: scale(1.1);
-    cursor: wait;
-  }
-  .finger-scan.completed {
-    background: linear-gradient(145deg, #a5d6a7, #81c784);
-    box-shadow: 0 10px 20px rgba(76, 175, 80, 0.6),
-                inset 0 4px 9px rgba(200, 230, 201, 0.95);
-    transform: scale(1);
-    cursor: default;
-  }
-
-  .finger-scan img {
-    width: 70px;
-    height: 90px;
-    margin-bottom: 15px;
-    filter: drop-shadow(0 3px 3px rgba(0,0,0,0.15));
-    border-radius: 40% / 60%;
-  }
-
-  .finger-scan .text {
-    font-size: 18px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 6px;
-    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.7);
-  }
-  .finger-scan .status {
-    font-weight: 700;
-    color: #388e3c;
-    font-size: 14px;
-    height: 20px;
-    text-align: center;
-  }
-
-  .scan-line {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    background: linear-gradient(to bottom, transparent 40%, rgba(255,255,255,0.8) 50%, transparent 60%);
-    background-size: 100% 200%;
-    opacity: 0;
-    border-radius: inherit;
-    z-index: 2;
-    pointer-events: none;
-  }
-
-  .finger-scan.scanning .scan-line {
-    animation: scan-animation 1.5s linear infinite;
-    opacity: 1;
-  }
-
-  @keyframes scan-animation {
-    0% { background-position: 0 -100%; }
-    100% { background-position: 0 200%; }
+    cursor: not-allowed;
+    box-shadow: none;
   }
 
   #name-container {
-    max-width: 400px;
-    margin: 20px auto 40px auto;
-    display: flex;
-    flex-direction: column;
-    text-align: center;
+    margin-bottom: 30px;
   }
   #name-container label {
+    display: block;
     font-size: 18px;
     margin-bottom: 8px;
-    color: #555;
+    color: #034078;
   }
   #name-input {
+    width: 100%;
     padding: 12px 15px;
     font-size: 18px;
-    border-radius: 8px;
-    border: 1.5px solid #ccc;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 10px;
+    border: 1.8px solid #ccc;
     transition: border-color 0.3s ease;
   }
   #name-input:focus {
+    border-color: #0366d6;
     outline: none;
-    border-color: #4a90e2;
   }
 
+  /* Fingerprint scanner container */
+  .finger-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+
+  /* Circular finger scan */
+  .finger-scan {
+    flex: 1 1 110px;
+    max-width: 110px;
+    aspect-ratio: 1 / 1;
+    background: radial-gradient(circle at center, #e3f2fd 0%, #a1c4fd 60%, #5a8ddb 90%);
+    border-radius: 50%;
+    box-shadow:
+      inset 0 5px 15px rgba(255 255 255 / 0.8),
+      0 8px 18px rgba(0, 51, 102, 0.3);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #022f40;
+    font-weight: 600;
+    font-size: 18px;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+  }
+  .finger-scan:hover:not(.scanning):not(.completed) {
+    transform: scale(1.08);
+    box-shadow:
+      inset 0 10px 25px rgba(255 255 255 / 0.9),
+      0 10px 30px rgba(0, 72, 150, 0.5);
+  }
+  .finger-scan.scanning {
+    animation: pulseGlow 1.8s ease-in-out infinite;
+    transform: scale(1.1);
+    box-shadow:
+      inset 0 0 30px #0d47a1,
+      0 15px 40px rgba(13, 71, 161, 0.9);
+    color: #d0e6ff;
+  }
+  .finger-scan.completed {
+    background: radial-gradient(circle at center, #bbdefb 0%, #90caf9 70%, #42a5f5 100%);
+    box-shadow:
+      inset 0 5px 15px rgba(255 255 255 / 0.9),
+      0 8px 20px rgba(30, 136, 229, 0.7);
+    color: #074a85;
+    cursor: default;
+    transform: scale(1);
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow:
+        inset 0 0 30px #0d47a1,
+        0 15px 40px rgba(13, 71, 161, 0.9);
+    }
+    50% {
+      box-shadow:
+        inset 0 0 45px #1565c0,
+        0 20px 50px rgba(21, 101, 192, 1);
+    }
+  }
+
+  /* Fingerprint ridge pattern (subtle concentric circles) */
+  .finger-scan::before {
+    content: "";
+    position: absolute;
+    inset: 10%;
+    border-radius: 50%;
+    pointer-events: none;
+    background:
+      repeating-radial-gradient(circle, rgba(255 255 255 / 0.08) 0 2px, transparent 2px 5px);
+    z-index: 2;
+  }
+
+  /* Scanning moving line */
+  .scan-line {
+    position: absolute;
+    top: -40%;
+    left: 0;
+    width: 100%;
+    height: 40%;
+    border-radius: 50%;
+    background: linear-gradient(180deg, transparent 0%, rgba(255 255 255 / 0.7) 50%, transparent 100%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .finger-scan.scanning .scan-line {
+    opacity: 1;
+    animation: scanMove 1.4s linear infinite;
+  }
+  @keyframes scanMove {
+    0% { top: -40%; }
+    100% { top: 100%; }
+  }
+
+  .status {
+    position: relative;
+    z-index: 4;
+    margin-top: 8px;
+    font-size: 14px;
+    min-height: 18px;
+    color: #01315a;
+  }
+
+  /* Signature pad */
   #signature-pad {
     display: block;
     margin: 0 auto;
-    background: white;
+    background: #ffffff;
     border-radius: 12px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-    border: 2px solid #ddd;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    border: 2px solid #ccc;
     cursor: crosshair;
     user-select: none;
     touch-action: none;
+    width: 100%;
+    max-width: 650px;
+    height: 180px;
   }
 
   #signature-buttons {
-    text-align: center;
     margin-top: 15px;
+    text-align: center;
   }
   #signature-buttons button {
-    margin: 0 10px;
-    width: 140px;
+    margin: 0 12px;
+    min-width: 140px;
   }
 
+  /* Submit and Reset buttons styling */
   #submit-btn {
-    margin: 10px;
-    background: #27ae60;
+    background: #2e7d32;
   }
-
+  #submit-btn:hover:not(:disabled) {
+    background: #27632a;
+  }
   #reset-all {
-    background: #e74c3c;
-    margin: 10px;
+    background: #c62828;
+  }
+  #reset-all:hover:not(:disabled) {
+    background: #9a1c1c;
   }
 </style>
 </head>
 <body>
 
-<!-- Flags on top -->
+<!-- Flags -->
 <div id="flags">
   <img src="https://upload.wikimedia.org/wikipedia/commons/7/71/Flag_of_Ethiopia.svg" alt="Ethiopia Flag" />
   <img src="https://upload.wikimedia.org/wikipedia/en/c/cf/Flag_of_Canada.svg" alt="Canada Flag" />
 </div>
 
-<!-- Company Name -->
 <div class="company-info">MESRAK GENERAL TRADING PLC 0950519065</div>
 
-<!-- Intro -->
 <div id="intro" class="active">
-  <h1>Welcome to Fingerprint & Signature Capture</h1>
-  <button id="startBtn">Start</button>
+  <h1>Welcome to Fingerprint & Signature for Passport</h1>
+  <div style="text-align:center;">
+    <button id="startBtn">Start</button>
+  </div>
 </div>
 
-<!-- Capture Section -->
 <div id="capture">
-  <div class="company-info">MESRAK GENERAL TRADING PLC 0950519065</div>
+  <div class="company-info">📲 0950519065</div>
 
   <div id="name-container">
     <label for="name-input">Enter Your Full Name:</label>
-    <input id="name-input" type="text" placeholder="John Doe" />
+    <input id="name-input" type="text" placeholder="John Doe" autocomplete="off" />
   </div>
 
   <h2>Fingerprint Scans</h2>
   <div class="finger-container">
     <div class="finger-scan" id="thumb">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Fingerprint_pattern.svg/90px-Fingerprint_pattern.svg.png" alt="Thumb" />
-      <div class="text">Thumb</div>
+      Thumb
       <div class="status"></div>
       <div class="scan-line"></div>
     </div>
     <div class="finger-scan" id="index">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Fingerprint_pattern.svg/90px-Fingerprint_pattern.svg.png" alt="Index" />
-      <div class="text">Index</div>
+      Index
       <div class="status"></div>
       <div class="scan-line"></div>
     </div>
     <div class="finger-scan" id="middle">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Fingerprint_pattern.svg/90px-Fingerprint_pattern.svg.png" alt="Middle" />
-      <div class="text">Middle</div>
+      Middle
       <div class="status"></div>
       <div class="scan-line"></div>
     </div>
     <div class="finger-scan" id="ring">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Fingerprint_pattern.svg/90px-Fingerprint_pattern.svg.png" alt="Ring" />
-      <div class="text">Ring</div>
+      Ring
       <div class="status"></div>
       <div class="scan-line"></div>
     </div>
     <div class="finger-scan" id="little">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Fingerprint_pattern.svg/90px-Fingerprint_pattern.svg.png" alt="Little" />
-      <div class="text">Little</div>
+      Little
       <div class="status"></div>
       <div class="scan-line"></div>
     </div>
   </div>
 
   <h2>Sign Below</h2>
-  <canvas id="signature-pad" width="400" height="150"></canvas>
+  <canvas id="signature-pad" width="650" height="180"></canvas>
   <div id="signature-buttons">
     <button id="clear-signature">Clear Signature</button>
   </div>
 
-  <div style="text-align: center; margin-top: 20px;">
+  <div style="text-align:center; margin-top: 30px;">
     <button id="submit-btn">Submit</button>
     <button id="reset-all">Reset All</button>
   </div>
@@ -290,31 +326,54 @@ const startBtn = document.getElementById('startBtn');
 const introDiv = document.getElementById('intro');
 const captureDiv = document.getElementById('capture');
 const fingers = ['thumb', 'index', 'middle', 'ring', 'little'];
-const signaturePad = document.getElementById('signature-pad');
-const ctx = signaturePad.getContext('2d');
-const clearBtn = document.getElementById('clear-signature');
+const nameInput = document.getElementById('name-input');
 const submitBtn = document.getElementById('submit-btn');
 const resetBtn = document.getElementById('reset-all');
-const nameInput = document.getElementById('name-input');
-const scanSound = document.getElementById('scan-sound');
+const clearBtn = document.getElementById('clear-signature');
+const signaturePad = document.getElementById('signature-pad');
+const ctx = signaturePad.getContext('2d');
 
 let drawing = false;
 let lastX = 0;
 let lastY = 0;
 
+// Web Audio API beep sound generator
+function playBeep(duration = 200, frequency = 700, volume = 0.2, callback) {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  gainNode.gain.value = volume;
+  oscillator.frequency.value = frequency;
+  oscillator.type = "square";
+
+  oscillator.start();
+
+  setTimeout(() => {
+    oscillator.stop();
+    if (callback) callback();
+  }, duration);
+}
+
 startBtn.addEventListener('click', () => {
   introDiv.classList.remove('active');
   captureDiv.classList.add('active');
+  nameInput.focus();
 });
 
 fingers.forEach(id => {
   const fingerDiv = document.getElementById(id);
   fingerDiv.addEventListener('click', () => {
     if (fingerDiv.classList.contains('completed') || fingerDiv.classList.contains('scanning')) return;
+
     fingerDiv.classList.add('scanning');
     fingerDiv.querySelector('.status').textContent = 'Scanning...';
-    scanSound.currentTime = 0;
-    scanSound.play();
+
+    playBeep();
+
     setTimeout(() => {
       fingerDiv.classList.remove('scanning');
       fingerDiv.classList.add('completed');
@@ -323,6 +382,7 @@ fingers.forEach(id => {
   });
 });
 
+// Signature Pad Drawing
 function getPointerPos(e) {
   const rect = signaturePad.getBoundingClientRect();
   let x, y;
@@ -333,7 +393,7 @@ function getPointerPos(e) {
     x = e.clientX - rect.left;
     y = e.clientY - rect.top;
   }
-  return {x, y};
+  return { x, y };
 }
 
 function startDrawing(e) {
@@ -342,22 +402,27 @@ function startDrawing(e) {
   const pos = getPointerPos(e);
   lastX = pos.x;
   lastY = pos.y;
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
 }
+
 function draw(e) {
   if (!drawing) return;
   e.preventDefault();
   const pos = getPointerPos(e);
-  ctx.lineTo(pos.x, pos.y);
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
+
+  ctx.strokeStyle = '#034078';
+  ctx.lineWidth = 3;
   ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(pos.x, pos.y);
   ctx.stroke();
+
   lastX = pos.x;
   lastY = pos.y;
 }
+
 function stopDrawing(e) {
   if (!drawing) return;
   e.preventDefault();
@@ -370,49 +435,43 @@ signaturePad.addEventListener('mousemove', draw);
 signaturePad.addEventListener('touchmove', draw);
 signaturePad.addEventListener('mouseup', stopDrawing);
 signaturePad.addEventListener('touchend', stopDrawing);
-signaturePad.addEventListener('mouseout', stopDrawing);
+signaturePad.addEventListener('touchcancel', stopDrawing);
 
 clearBtn.addEventListener('click', () => {
   ctx.clearRect(0, 0, signaturePad.width, signaturePad.height);
 });
 
-resetBtn.addEventListener('click', () => {
-  ctx.clearRect(0, 0, signaturePad.width, signaturePad.height);
-  nameInput.value = '';
-  fingers.forEach(id => {
-    const fingerDiv = document.getElementById(id);
-    fingerDiv.classList.remove('completed', 'scanning');
-    fingerDiv.querySelector('.status').textContent = '';
-  });
-});
-
-function isSignatureEmpty() {
-  const blank = document.createElement('canvas');
-  blank.width = signaturePad.width;
-  blank.height = signaturePad.height;
-  return signaturePad.toDataURL() === blank.toDataURL();
-}
-
 submitBtn.addEventListener('click', () => {
-  const name = nameInput.value.trim();
-  if (!name) {
-    alert('Please enter your full name.');
+  if (!nameInput.value.trim()) {
+    alert('Please enter your full name before submitting.');
     nameInput.focus();
     return;
   }
-  const allScanned = fingers.every(id => {
-    return document.getElementById(id).classList.contains('completed');
-  });
-  if (!allScanned) {
-    alert('Please scan all five fingers.');
+  const incomplete = fingers.some(id => !document.getElementById(id).classList.contains('completed'));
+  if (incomplete) {
+    alert('Please complete all fingerprint scans before submitting.');
     return;
   }
-  if (isSignatureEmpty()) {
-    alert('Please provide your signature.');
+  if (ctx.getImageData(0, 0, signaturePad.width, signaturePad.height).data.every(v => v === 0)) {
+    alert('Please provide a signature before submitting.');
     return;
   }
-  alert(`Submission successful!\nName: ${name}\nAll fingers scanned and signature captured.`);
+  alert('Submission successful! Thank you.');
+  // Could add code here to send data to a server or save
+});
+
+resetBtn.addEventListener('click', () => {
+  if (confirm('Are you sure you want to reset everything?')) {
+    nameInput.value = '';
+    fingers.forEach(id => {
+      const fingerDiv = document.getElementById(id);
+      fingerDiv.classList.remove('completed', 'scanning');
+      fingerDiv.querySelector('.status').textContent = '';
+    });
+    ctx.clearRect(0, 0, signaturePad.width, signaturePad.height);
+  }
 });
 </script>
+
 </body>
 </html>
