@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Face Scanner</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body, html {
       margin: 0;
@@ -13,10 +13,11 @@
       background: linear-gradient(to bottom right, #000000, #0f2027);
       color: #00ff99;
       transition: background 1s ease;
+      overflow-x: hidden;
     }
 
     body.verified {
-      background: linear-gradient(to bottom right, #004400, #00aa55);
+      background: linear-gradient(to bottom right, #24ff65, #00aa55);
       color: #ffffff;
     }
 
@@ -38,8 +39,8 @@
     }
 
     .flag {
-      width: 48px;
-      height: 32px;
+      width: 120px;
+      height: 80px;
       background-size: cover;
       border-radius: 4px;
       box-shadow: 0 0 8px #00ff99cc;
@@ -56,9 +57,9 @@
 
     h1 {
       margin: 0;
-      font-size: 22px;
-      color: #00ff99;
-      text-shadow: 0 0 8px #00ffcc;
+      font-size: 40px;
+      color: white;
+      text-shadow: 0 0 8px #77f9fc;
     }
 
     #name-form {
@@ -88,23 +89,60 @@
       min-height: 30px;
     }
 
+    #start-button {
+      display: block;
+      margin: 15px auto;
+      padding: 10px 20px;
+      font-size: 18px;
+      color: #00ff99;
+      background: transparent;
+      border: 2px solid #00ff99;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00ff99aa;
+      transition: all 0.3s ease;
+      z-index: 5;
+      position: relative;
+    }
+
+    #start-button:hover {
+      background: #00ff9940;
+    }
+
     #container {
       position: relative;
       width: 90%;
       max-width: 320px;
       height: 420px;
-      margin: 20px auto;
+      margin: 20px auto 50px;
       border: 3px solid #00ff99;
       border-radius: 14px;
       overflow: hidden;
       background: rgba(0, 0, 0, 0.4);
       box-shadow: 0 0 25px #00ff99aa;
       transition: all 0.8s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
     }
 
     body.verified #container {
       border-color: #00ff00;
       box-shadow: 0 0 40px #00ff00aa;
+    }
+
+    #camera-video {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      filter: brightness(0.7) contrast(1.2);
+      border-radius: 14px;
     }
 
     #face-outline {
@@ -118,6 +156,8 @@
       border-radius: 50% / 60%;
       box-shadow: 0 0 15px #00ff99aa;
       animation: pulseOutline 2s ease-in-out infinite;
+      z-index: 2;
+      pointer-events: none;
     }
 
     .eye {
@@ -128,6 +168,8 @@
       border: 2px solid #00ff99;
       border-radius: 50%;
       animation: blink 6s infinite;
+      z-index: 2;
+      pointer-events: none;
     }
 
     .eye.left { left: calc(50% - 50px); }
@@ -140,22 +182,29 @@
       width: 100%;
       height: 3px;
       background: #00ff99;
-      animation: scanMove 3s infinite;
+      animation: scanMove 1.8s infinite;
+      z-index: 2;
+      pointer-events: none;
     }
 
     #instructions {
       position: absolute;
-      top: 50%;
+      top: calc(75px + 210px + 20px);
       left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 24px;
+      transform: translateX(-50%);
+      font-size: 22px;
       text-align: center;
       text-shadow: 0 0 10px #00ffcc;
-      padding: 10px 20px;
+      padding: 8px 16px;
       border: 2px solid #00ff99;
       border-radius: 12px;
-      background: rgba(0, 0, 0, 0.4);
-      animation: fadeInOut 2s infinite;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 3;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 0.6s ease;
+      width: 80%;
+      max-width: 280px;
     }
 
     @keyframes pulseOutline {
@@ -173,11 +222,6 @@
       100% { top: 100%; }
     }
 
-    @keyframes fadeInOut {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
     .verified-message {
       font-size: 28px;
       font-weight: bold;
@@ -185,6 +229,18 @@
       text-shadow: 0 0 15px #00ff00, 0 0 30px #00ff99;
       animation: verifiedPop 1s ease forwards;
       display: inline-block;
+      margin-top: 15px;
+      text-align: center;
+      user-select: none;
+      pointer-events: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.7);
+      padding: 12px 24px;
+      border-radius: 14px;
+      z-index: 10;
     }
 
     @keyframes verifiedPop {
@@ -200,24 +256,6 @@
         transform: scale(1);
       }
     }
-
-    #start-button {
-      display: block;
-      margin: 15px auto;
-      padding: 10px 20px;
-      font-size: 18px;
-      color: #00ff99;
-      background: transparent;
-      border: 2px solid #00ff99;
-      border-radius: 10px;
-      cursor: pointer;
-      box-shadow: 0 0 10px #00ff99aa;
-      transition: all 0.3s ease;
-    }
-
-    #start-button:hover {
-      background: #00ff9940;
-    }
   </style>
 </head>
 <body>
@@ -227,11 +265,11 @@
       <div class="flag ethiopia"></div>
       <div class="flag canada"></div>
     </div>
-    <h1>MESRAK GENERAL TRADING PLC</h1>
+    <h1>MESRAK GENERAL TRADING PLC 0950519065</h1>
   </div>
 
-  <form id="name-form">
-    <input id="name-input" type="text" placeholder="Enter your name" />
+  <form id="name-form" onsubmit="return false;">
+    <input id="name-input" type="text" placeholder="Enter your name" autocomplete="off" />
   </form>
 
   <div id="display-name"></div>
@@ -239,6 +277,7 @@
   <button id="start-button">Start Scanning</button>
 
   <div id="container">
+    <video id="camera-video" autoplay playsinline muted></video>
     <div id="face-outline"></div>
     <div class="eye left"></div>
     <div class="eye right"></div>
@@ -248,7 +287,6 @@
 
   <audio id="beep" src="https://www.soundjay.com/button/sounds/beep-07.mp3"></audio>
   <audio id="success-sound" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <script>
     const instructions = document.getElementById('instructions');
@@ -258,43 +296,77 @@
     const displayName = document.getElementById('display-name');
     const body = document.body;
     const startButton = document.getElementById('start-button');
+    const video = document.getElementById('camera-video');
 
     const prompts = [
       "Align your face...",
       "Look left...",
       "Look right...",
       "Blink your eyes...",
+      "Scanning...",
       "Face Verified"
     ];
 
     let index = 0;
-
-    function showPrompts() {
-      if (index < prompts.length) {
-        if (index === prompts.length - 1) {
-          body.classList.add("verified");
-          instructions.innerHTML = `<span class="verified-message">✔ Face Verified</span>`;
-          successSound.play().catch(() => {});
-          navigator.vibrate?.(300);
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        } else {
-          instructions.textContent = prompts[index];
-          beep.play().catch(() => {});
-        }
-        index++;
-        setTimeout(showPrompts, 1500);
-      }
-    }
-
-    startButton.addEventListener('click', () => {
-      index = 0;
-      body.classList.remove("verified");
-      showPrompts();
-    });
+    let scanningTimeout;
 
     nameInput.addEventListener('input', () => {
       const name = nameInput.value.trim();
       displayName.textContent = name ? `Welcome, ${name}` : '';
+    });
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: false
+        });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Could not access camera. Please allow camera permission.");
+        console.error(err);
+      }
+    }
+
+    function resetScanning() {
+      index = 0;
+      instructions.textContent = prompts[0];
+      body.classList.remove('verified');
+      const verifiedMsg = document.querySelector('.verified-message');
+      if (verifiedMsg) verifiedMsg.remove();
+      startButton.disabled = false;
+    }
+
+    function showPrompts() {
+      if (index < prompts.length) {
+        instructions.textContent = prompts[index];
+        beep.play().catch(() => {});
+        if (index === prompts.length - 1) {
+          successSound.play().catch(() => {});
+          body.classList.add("verified");
+          const msg = document.createElement('div');
+          msg.className = 'verified-message';
+          msg.textContent = '✅ Face Verified!';
+          document.body.appendChild(msg);
+          startButton.disabled = false;
+          return;
+        }
+        index++;
+        scanningTimeout = setTimeout(showPrompts, 1800);
+      }
+    }
+
+    startButton.addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert("Please enter your name before starting the scan.");
+        return;
+      }
+
+      startButton.disabled = true;
+      startCamera();
+      resetScanning();
+      setTimeout(showPrompts, 1000);
     });
   </script>
 
